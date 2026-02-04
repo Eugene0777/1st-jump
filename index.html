@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>1st jump</title>
+  <title>1st Jump</title>
   <style>
-    :root{ --bg:#515151; --white:#fff; --black:#000; }
+    :root{ --bg:#000000; --white:#fff; --black:#000; }
     html,body{ margin:0; height:100%; background:var(--bg); font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; overflow:hidden; }
     .wrap{ position:relative; width:100vw; height:100vh; display:flex; align-items:center; justify-content:center; background:var(--bg); touch-action:none; }
 
@@ -20,6 +20,46 @@
 
     .hud{ position:absolute; inset:0; pointer-events:none; }
 
+    .logoTopLeft{
+      position:absolute; left:14px; top:12px;
+      width:86px; height:86px; border-radius:14px;
+      background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12);
+      display:flex; align-items:center; justify-content:center;
+      overflow:hidden; backdrop-filter:blur(6px);
+      pointer-events:none;
+    }
+    .logoTopLeft img{
+      width:100%; height:100%;
+      object-fit:contain;
+      padding:10px;
+      filter:grayscale(1) contrast(1.25) brightness(1.25);
+      pointer-events:none;
+    }
+
+    .devUnderLogo{
+      position:absolute;
+      left:14px;
+      top: 104px;
+      width:86px;
+      text-align:center;
+      pointer-events:auto;
+    }
+    .devUnderLogo a{
+      display:inline-block;
+      padding:4px 6px;
+      border-radius:10px;
+      font-size:11px;
+      font-weight:800;
+      color:#fff;
+      text-decoration:none;
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.12);
+      backdrop-filter: blur(6px);
+      text-shadow:0 1px 2px rgba(0,0,0,.55);
+      line-height:1.1;
+    }
+    .devUnderLogo a:hover{ text-decoration:underline; }
+
     .score{
       position:absolute; left:14px; top:12px;
       color:var(--white); font-weight:700; letter-spacing:.5px;
@@ -28,6 +68,25 @@
       transform: translateX(96px);
       display:flex; gap:10px; align-items:center;
       pointer-events:none;
+    }
+
+    .titleTopRight{
+      position:absolute;
+      right:14px;
+      top:12px;
+      color:#fff;
+      font-weight:900;
+      letter-spacing:.6px;
+      font-size:18px;
+      padding:10px 12px;
+      border-radius:14px;
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.12);
+      backdrop-filter: blur(6px);
+      line-height:1;
+      pointer-events:none;
+      user-select:none;
+      white-space:nowrap;
     }
 
     .help{
@@ -39,52 +98,10 @@
       pointer-events:none;
     }
 
-    /* Logo block (non-clickable, doesn't block the game) */
-    .logoTopLeft{
-      position:absolute; left:14px; top:12px;
-      width:86px; height:86px; border-radius:14px;
-      background:rgba(0,0,0,.18); border:1px solid rgba(255,255,255,.12);
-      display:flex; align-items:center; justify-content:center;
-      overflow:hidden; backdrop-filter:blur(6px);
-      pointer-events:none; /* don't block gameplay */
-    }
-    .logoTopLeft img{
-      width:100%; height:100%;
-      object-fit:contain;
-      padding:10px;
-      filter:grayscale(1) contrast(1.25) brightness(1.25);
-      pointer-events:none;
-    }
-
-    /* Dev link UNDER the logo */
-    .devUnderLogo{
-      position:absolute;
-      left:14px;
-      top: 104px; /* 12(top) + 86(logo height) + ~6 gap */
-      width:86px;
-      text-align:center;
-      pointer-events:auto; /* clickable */
-    }
-    .devUnderLogo a{
-      display:inline-block;
-      padding:4px 6px;
-      border-radius:10px;
-      font-size:11px;
-      font-weight:800;
-      color:#fff;
-      text-decoration:none;
-      background:rgba(0,0,0,.22);
-      border:1px solid rgba(255,255,255,.12);
-      backdrop-filter: blur(6px);
-      text-shadow:0 1px 2px rgba(0,0,0,.55);
-      line-height:1.1;
-    }
-    .devUnderLogo a:hover{ text-decoration:underline; }
-
     .overlay{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:auto; }
     .card{
       width:min(560px, calc(100vw - 28px));
-      background:rgba(0,0,0,.35); border:1px solid rgba(255,255,255,.18);
+      background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.14);
       border-radius:18px; padding:18px 18px 14px; color:var(--white);
       box-shadow:0 14px 40px rgba(0,0,0,.35); backdrop-filter:blur(8px);
       text-align:left;
@@ -101,7 +118,7 @@
     .pill{
       display:inline-flex; align-items:center; gap:8px;
       padding:7px 10px; border-radius:999px;
-      border:1px solid rgba(255,255,255,.14); background:rgba(0,0,0,.20);
+      border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.06);
       color:rgba(255,255,255,.9); font-size:12px; font-weight:650;
     }
   </style>
@@ -123,6 +140,8 @@
         <span id="scoreText">Score: 0</span>
       </div>
 
+      <div class="titleTopRight">1st Jump</div>
+
       <div class="help">
         Controls: <b>A</b>/<b>D</b> (or Left/Right). Mobile: touch left/right side of the screen. Coins: <b>+1</b>. Avoid enemies.
       </div>
@@ -130,7 +149,7 @@
 
     <div class="overlay" id="overlay">
       <div class="card">
-        <h1 id="title">Doodle Jump (B/W)</h1>
+        <h1 id="title">1st Jump</h1>
         <p id="desc">
           Jump upward by landing on platforms. Collect coins (+1). Avoid threats (enemies).
           <br><b>Controls:</b> A/D or Left/Right. Mobile: touch left/right.
@@ -163,14 +182,13 @@
   const startBtn = document.getElementById('startBtn');
   const scoreText = document.getElementById('scoreText');
 
-  // Assets
   const playerImg = new Image(); playerImg.src = "pers.png";
-  const coinSources = ["peaq-logo-white-bg.svg","aethir-logo.svg","ethena-logo.webp"];
+
+  const coinSources = ["peaq-logo-white-bg.svg","aethir-logo.svg","ethena-logo.webp","zora.webp"];
   const coinImgs = coinSources.map(src => { const i=new Image(); i.src=src; return i; });
 
-  const BG="#515151", WHITE="#fff", BLACK="#000";
+  const BG="#000000", WHITE="#fff", BLACK="#000";
 
-  // Physics
   const GRAVITY=0.35;
   const JUMP_VY=-10.5;
   const MOVE_ACCEL=0.55;
@@ -180,24 +198,30 @@
   const PLATFORM_W=72, PLATFORM_H=10;
   const COIN_R=16;
 
-  // Player size
   const PLAYER_W = 54;
   const PLAYER_H = 54;
 
-  // Hitboxes
   const PLAYER_HIT_INSET = 10;
   const ENEMY_HIT_SHRINK = 0.78;
 
-  // Enemies
   const ENEMY_SPAWN_CHANCE = 0.28;
   const ENEMY_MIN_GAP_Y = 220;
   const ENEMY_DRAW_R = 18;
   const ENEMY_HIT_R = ENEMY_DRAW_R * ENEMY_HIT_SHRINK;
 
-  // Popups (-7% etc.)
   const POPUP_TEXTS = ["-7%","-10%","-15%","-21%"];
-  const POPUP_LIFE = 42; // frames
+  const POPUP_LIFE = 42;
   const POPUP_RISE = 0.9;
+
+  // --- COIN GLOW + BRIGHTNESS BOOST ---
+  const COIN_GLOW_MAX = 18;        // stronger glow
+  const COIN_GLOW_MIN = 10;
+  const COIN_GLOW_ALPHA_MAX = 0.52;
+  const COIN_GLOW_ALPHA_MIN = 0.28;
+
+  // brighten the coin image itself (without changing its colors dramatically)
+  const COIN_IMG_FILTER = "brightness(1.25) contrast(1.05) saturate(1.08)";
+  const COIN_EXTRA_RING_ALPHA = 0.22;  // extra crisp halo to separate from enemies
 
   let running=false;
   let score=0;
@@ -240,7 +264,13 @@
   }
 
   function makeCoinNearPlatform(p){
-    return { x:p.x+rand(8,p.w-8), y:p.y-rand(28,58), r:COIN_R, sprite:coinImgs[Math.floor(Math.random()*coinImgs.length)] };
+    return {
+      x:p.x+rand(8,p.w-8),
+      y:p.y-rand(28,58),
+      r:COIN_R,
+      sprite:coinImgs[Math.floor(Math.random()*coinImgs.length)],
+      phase: Math.random()*Math.PI*2
+    };
   }
 
   function topEnemyY(){
@@ -281,7 +311,6 @@
     });
   }
 
-  // Keyboard input
   window.addEventListener('keydown', (e)=>{
     if (e.code==="KeyA"||e.code==="ArrowLeft") keys.left=true;
     if (e.code==="KeyD"||e.code==="ArrowRight") keys.right=true;
@@ -292,7 +321,6 @@
     if (e.code==="KeyD"||e.code==="ArrowRight") keys.right=false;
   });
 
-  // Mobile/touch input: left half => left, right half => right
   function setTouchDirection(clientX){
     const rect = canvas.getBoundingClientRect();
     const x = clientX - rect.left;
@@ -307,12 +335,10 @@
     if (!running) start();
     setTouchDirection(e.touches[0].clientX);
   }, {passive:false});
-
   canvas.addEventListener('touchmove', (e)=>{
     e.preventDefault();
     setTouchDirection(e.touches[0].clientX);
   }, {passive:false});
-
   canvas.addEventListener('touchend', (e)=>{
     e.preventDefault();
     clearTouchDirection();
@@ -330,10 +356,9 @@
   canvas.addEventListener('pointerup', ()=>clearTouchDirection());
   canvas.addEventListener('pointercancel', ()=>clearTouchDirection());
 
-  // Overlay
   function showStart(){
     overlay.style.display="flex";
-    titleEl.textContent="Doodle Jump (B/W)";
+    titleEl.textContent="1st Jump";
     descEl.innerHTML=`Jump upward by landing on platforms. Collect coins (+1). Avoid threats (enemies).<br><b>Controls:</b> A/D or Left/Right. Mobile: touch left/right.`;
     startBtn.textContent="START";
   }
@@ -352,7 +377,6 @@
     hideOverlay();
   }
 
-  // Collisions
   function rectsIntersect(ax,ay,aw,ah,bx,by,bw,bh){
     return ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by;
   }
@@ -380,22 +404,18 @@
   }
 
   function update(){
-    // movement
     if(keys.left) player.vx -= MOVE_ACCEL;
     if(keys.right) player.vx += MOVE_ACCEL;
     player.vx *= MOVE_FRICTION;
     player.vx = clamp(player.vx, -MAX_VX, MAX_VX);
     player.x += player.vx;
 
-    // wrap
     if(player.x + player.w < 0) player.x = canvas.width;
     if(player.x > canvas.width) player.x = -player.w;
 
-    // gravity
     player.vy += GRAVITY;
     player.y += player.vy;
 
-    // land on platforms
     if(player.vy > 0){
       for(const p of platforms){
         if(rectsIntersect(player.x, player.y, player.w, player.h, p.x, p.y, p.w, p.h)){
@@ -408,7 +428,6 @@
       }
     }
 
-    // coins
     for(let i=coins.length-1;i>=0;i--){
       const c=coins[i];
       if(circleRectHit(c.x,c.y,c.r, player.x,player.y,player.w,player.h)){
@@ -419,7 +438,6 @@
       }
     }
 
-    // enemies
     const pr = playerHitRect();
     for(const e of enemies){
       e.t += 0.03;
@@ -451,7 +469,6 @@
       }
     }
 
-    // popups update
     for (let i = popups.length - 1; i >= 0; i--) {
       const p = popups[i];
       p.y += p.vy;
@@ -459,7 +476,6 @@
       if (p.life <= 0) popups.splice(i, 1);
     }
 
-    // camera follow
     const target = canvas.height * 0.35;
     if(player.y < target){
       const dy = target - player.y;
@@ -477,7 +493,7 @@
 
       while(platforms.length < 18){
         const topY = Math.min(...platforms.map(p=>p.y));
-        const ny = topY - Math.random()*(66-34) - 34;
+        const ny = topY - rand(34,66);
         const np = makePlatform(ny);
         platforms.push(np);
         if(Math.random()<0.60) coins.push(makeCoinNearPlatform(np));
@@ -539,6 +555,56 @@
     }
   }
 
+  function drawCoins(){
+    for(const c of coins){
+      const pulse = (Math.sin((performance.now()/220) + c.phase) + 1) * 0.5;
+      const glowBlur = COIN_GLOW_MIN + (COIN_GLOW_MAX - COIN_GLOW_MIN) * pulse;
+      const glowAlpha = COIN_GLOW_ALPHA_MIN + (COIN_GLOW_ALPHA_MAX - COIN_GLOW_ALPHA_MIN) * pulse;
+
+      // soft glow
+      ctx.save();
+      ctx.globalAlpha = glowAlpha;
+      ctx.shadowColor = "rgba(255,255,255,1)";
+      ctx.shadowBlur = glowBlur;
+      ctx.beginPath();
+      ctx.arc(c.x, c.y, c.r + 3, 0, Math.PI*2);
+      ctx.fillStyle = "rgba(255,255,255,0.95)";
+      ctx.fill();
+      ctx.restore();
+
+      // crisp halo ring (helps pop vs enemies)
+      ctx.save();
+      ctx.globalAlpha = COIN_EXTRA_RING_ALPHA;
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = WHITE;
+      ctx.beginPath();
+      ctx.arc(c.x, c.y, c.r + 5, 0, Math.PI*2);
+      ctx.stroke();
+      ctx.restore();
+
+      // coin base
+      ctx.beginPath();
+      ctx.arc(c.x, c.y, c.r, 0, Math.PI*2);
+      ctx.fillStyle = "rgba(255,255,255,0.98)";
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = BLACK;
+      ctx.stroke();
+
+      // draw image brighter so it stands out
+      const s = c.r*1.55;
+      if(c.sprite.complete && c.sprite.naturalWidth > 0){
+        ctx.save();
+        ctx.filter = COIN_IMG_FILTER;
+        ctx.drawImage(c.sprite, c.x - s/2, c.y - s/2, s, s);
+        ctx.restore();
+      } else {
+        ctx.fillStyle = BLACK;
+        ctx.fillRect(c.x-2, c.y-2, 4, 4);
+      }
+    }
+  }
+
   function draw(){
     ctx.fillStyle = BG;
     ctx.fillRect(0,0,canvas.width,canvas.height);
@@ -559,23 +625,7 @@
       ctx.strokeRect(p.x+0.5, p.y+0.5, p.w-1, p.h-1);
     }
 
-    for(const c of coins){
-      ctx.beginPath();
-      ctx.arc(c.x, c.y, c.r, 0, Math.PI*2);
-      ctx.fillStyle = WHITE;
-      ctx.fill();
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = BLACK;
-      ctx.stroke();
-
-      const s = c.r*1.55;
-      if(c.sprite.complete && c.sprite.naturalWidth > 0){
-        ctx.drawImage(c.sprite, c.x - s/2, c.y - s/2, s, s);
-      } else {
-        ctx.fillStyle = BLACK;
-        ctx.fillRect(c.x-2, c.y-2, 4, 4);
-      }
-    }
+    drawCoins();
 
     for(const e of enemies) drawEnemy(e);
 
