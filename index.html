@@ -1,0 +1,617 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Doodle Jump (B/W)</title>
+  <style>
+    :root{ --bg:#515151; --white:#fff; --black:#000; }
+    html,body{ margin:0; height:100%; background:var(--bg); font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; overflow:hidden; }
+    .wrap{ position:relative; width:100vw; height:100vh; display:flex; align-items:center; justify-content:center; background:var(--bg); touch-action:none; }
+
+    canvas{
+      background:var(--bg);
+      border:2px solid rgba(255,255,255,.25);
+      border-radius:14px;
+      box-shadow:0 10px 30px rgba(0,0,0,.35);
+      image-rendering:pixelated;
+      touch-action:none;
+    }
+
+    .hud{ position:absolute; inset:0; pointer-events:none; }
+
+    .score{
+      position:absolute; left:14px; top:12px;
+      color:var(--white); font-weight:700; letter-spacing:.5px;
+      background:rgba(0,0,0,.25); border:1px solid rgba(255,255,255,.18);
+      padding:8px 10px; border-radius:12px; backdrop-filter:blur(6px);
+      transform: translateX(96px);
+      display:flex; gap:10px; align-items:center;
+      pointer-events:none;
+    }
+
+    .help{
+      position:absolute; left:14px; bottom:12px;
+      color:rgba(255,255,255,.85); font-size:12px;
+      background:rgba(0,0,0,.20); border:1px solid rgba(255,255,255,.12);
+      padding:8px 10px; border-radius:12px;
+      max-width:min(600px, calc(100vw - 28px));
+      pointer-events:none;
+    }
+
+    /* Logo block (non-clickable, doesn't block the game) */
+    .logoTopLeft{
+      position:absolute; left:14px; top:12px;
+      width:86px; height:86px; border-radius:14px;
+      background:rgba(0,0,0,.18); border:1px solid rgba(255,255,255,.12);
+      display:flex; align-items:center; justify-content:center;
+      overflow:hidden; backdrop-filter:blur(6px);
+      pointer-events:none; /* don't block gameplay */
+    }
+    .logoTopLeft img{
+      width:100%; height:100%;
+      object-fit:contain;
+      padding:10px;
+      filter:grayscale(1) contrast(1.25) brightness(1.25);
+      pointer-events:none;
+    }
+
+    /* Dev link UNDER the logo */
+    .devUnderLogo{
+      position:absolute;
+      left:14px;
+      top: 104px; /* 12(top) + 86(logo height) + ~6 gap */
+      width:86px;
+      text-align:center;
+      pointer-events:auto; /* clickable */
+    }
+    .devUnderLogo a{
+      display:inline-block;
+      padding:4px 6px;
+      border-radius:10px;
+      font-size:11px;
+      font-weight:800;
+      color:#fff;
+      text-decoration:none;
+      background:rgba(0,0,0,.22);
+      border:1px solid rgba(255,255,255,.12);
+      backdrop-filter: blur(6px);
+      text-shadow:0 1px 2px rgba(0,0,0,.55);
+      line-height:1.1;
+    }
+    .devUnderLogo a:hover{ text-decoration:underline; }
+
+    .overlay{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:auto; }
+    .card{
+      width:min(560px, calc(100vw - 28px));
+      background:rgba(0,0,0,.35); border:1px solid rgba(255,255,255,.18);
+      border-radius:18px; padding:18px 18px 14px; color:var(--white);
+      box-shadow:0 14px 40px rgba(0,0,0,.35); backdrop-filter:blur(8px);
+      text-align:left;
+    }
+    .card h1{ margin:0 0 8px 0; font-size:20px; letter-spacing:.4px; }
+    .card p{ margin:8px 0; color:rgba(255,255,255,.9); line-height:1.35; font-size:13px; }
+    .row{ display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; align-items:center; }
+    .btn{
+      appearance:none; border:none; border-radius:14px; padding:11px 14px;
+      font-weight:800; letter-spacing:.6px; cursor:pointer;
+      color:var(--black); background:var(--white); box-shadow:0 10px 24px rgba(0,0,0,.25);
+    }
+    .btn:active{ transform:translateY(1px); }
+    .pill{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:7px 10px; border-radius:999px;
+      border:1px solid rgba(255,255,255,.14); background:rgba(0,0,0,.20);
+      color:rgba(255,255,255,.9); font-size:12px; font-weight:650;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <canvas id="c" width="420" height="720"></canvas>
+
+    <div class="hud">
+      <div class="logoTopLeft">
+        <img src="logo game.png" alt="Game Logo">
+      </div>
+
+      <div class="devUnderLogo">
+        <a href="https://x.com/Jacks12300711" target="_blank" rel="noopener noreferrer">dev - Kuznets</a>
+      </div>
+
+      <div class="score" id="score">
+        <span id="scoreText">Score: 0</span>
+      </div>
+
+      <div class="help">
+        Controls: <b>A</b>/<b>D</b> (or Left/Right). Mobile: touch left/right side of the screen. Coins: <b>+1</b>. Avoid enemies.
+      </div>
+    </div>
+
+    <div class="overlay" id="overlay">
+      <div class="card">
+        <h1 id="title">Doodle Jump (B/W)</h1>
+        <p id="desc">
+          Jump upward by landing on platforms. Collect coins (+1). Avoid threats (enemies).
+          <br><b>Controls:</b> A/D or Left/Right. Mobile: touch left/right.
+        </p>
+        <div class="row">
+          <button class="btn" id="startBtn">START</button>
+          <span class="pill">Enemies: FUD Cloud, Scam Bot, Rug Pull</span>
+        </div>
+      </div>
+    </div>
+
+<script>
+(() => {
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+
+  function fit(){
+    const pad=20;
+    const w=window.innerWidth-pad*2;
+    const h=window.innerHeight-pad*2;
+    const scale=Math.min(w/canvas.width,h/canvas.height);
+    canvas.style.width=Math.floor(canvas.width*scale)+'px';
+    canvas.style.height=Math.floor(canvas.height*scale)+'px';
+  }
+  window.addEventListener('resize', fit); fit();
+
+  const overlay = document.getElementById('overlay');
+  const titleEl = document.getElementById('title');
+  const descEl = document.getElementById('desc');
+  const startBtn = document.getElementById('startBtn');
+  const scoreText = document.getElementById('scoreText');
+
+  // Assets
+  const playerImg = new Image(); playerImg.src = "pers.png";
+  const coinSources = ["peaq-logo-white-bg.svg","aethir-logo.svg","ethena-logo.webp"];
+  const coinImgs = coinSources.map(src => { const i=new Image(); i.src=src; return i; });
+
+  const BG="#515151", WHITE="#fff", BLACK="#000";
+
+  // Physics
+  const GRAVITY=0.35;
+  const JUMP_VY=-10.5;
+  const MOVE_ACCEL=0.55;
+  const MOVE_FRICTION=0.90;
+  const MAX_VX=6.2;
+
+  const PLATFORM_W=72, PLATFORM_H=10;
+  const COIN_R=16;
+
+  // Player size
+  const PLAYER_W = 54;
+  const PLAYER_H = 54;
+
+  // Hitboxes
+  const PLAYER_HIT_INSET = 10;
+  const ENEMY_HIT_SHRINK = 0.78;
+
+  // Enemies
+  const ENEMY_SPAWN_CHANCE = 0.28;
+  const ENEMY_MIN_GAP_Y = 220;
+  const ENEMY_DRAW_R = 18;
+  const ENEMY_HIT_R = ENEMY_DRAW_R * ENEMY_HIT_SHRINK;
+
+  // Popups (-7% etc.)
+  const POPUP_TEXTS = ["-7%","-10%","-15%","-21%"];
+  const POPUP_LIFE = 42; // frames
+  const POPUP_RISE = 0.9;
+
+  let running=false;
+  let score=0;
+  let cameraY=0;
+
+  let keys={left:false,right:false};
+  let player, platforms, coins, enemies, popups;
+
+  function rand(a,b){ return a + Math.random()*(b-a); }
+  function clamp(v,a,b){ return Math.max(a, Math.min(b,v)); }
+
+  function resetGame(){
+    score=0; cameraY=0;
+    player={
+      x:canvas.width/2 - PLAYER_W/2,
+      y:canvas.height - 160,
+      w:PLAYER_W,
+      h:PLAYER_H,
+      vx:0, vy:-2
+    };
+
+    platforms=[]; coins=[]; enemies=[]; popups=[];
+
+    platforms.push({ x:canvas.width/2-PLATFORM_W/2, y:canvas.height-60, w:PLATFORM_W, h:PLATFORM_H });
+
+    let y=canvas.height-120;
+    for(let i=0;i<16;i++){
+      y -= rand(34,64);
+      const p=makePlatform(y);
+      platforms.push(p);
+      if(Math.random()<0.55) coins.push(makeCoinNearPlatform(p));
+      maybeSpawnEnemyNear(p);
+    }
+
+    scoreText.textContent="Score: 0";
+  }
+
+  function makePlatform(y){
+    return { x:rand(10, canvas.width-PLATFORM_W-10), y, w:PLATFORM_W, h:PLATFORM_H };
+  }
+
+  function makeCoinNearPlatform(p){
+    return { x:p.x+rand(8,p.w-8), y:p.y-rand(28,58), r:COIN_R, sprite:coinImgs[Math.floor(Math.random()*coinImgs.length)] };
+  }
+
+  function topEnemyY(){
+    if(enemies.length===0) return Infinity;
+    return Math.min(...enemies.map(e=>e.y));
+  }
+
+  function maybeSpawnEnemyNear(p){
+    if(Math.random() > ENEMY_SPAWN_CHANCE) return;
+
+    const candidateY = p.y - rand(95, 170);
+    if(Math.abs(candidateY - topEnemyY()) < ENEMY_MIN_GAP_Y) return;
+
+    const types = ["FUD","BOT","RUG"];
+    const type = types[Math.floor(Math.random()*types.length)];
+    const baseVx = (Math.random()<0.5?-1:1) * rand(1.0, 2.1);
+
+    enemies.push({
+      type,
+      x: rand(ENEMY_DRAW_R, canvas.width-ENEMY_DRAW_R),
+      y: candidateY,
+      r: ENEMY_DRAW_R,
+      hitR: ENEMY_HIT_R,
+      t: Math.random()*Math.PI*2,
+      vx: baseVx,
+      baseX: null
+    });
+  }
+
+  function addPopup(){
+    const text = POPUP_TEXTS[Math.floor(Math.random()*POPUP_TEXTS.length)];
+    popups.push({
+      text,
+      x: player.x + player.w/2 + rand(-10, 10),
+      y: player.y + 8 + rand(-4, 6),
+      vy: -POPUP_RISE,
+      life: POPUP_LIFE
+    });
+  }
+
+  // Keyboard input
+  window.addEventListener('keydown', (e)=>{
+    if (e.code==="KeyA"||e.code==="ArrowLeft") keys.left=true;
+    if (e.code==="KeyD"||e.code==="ArrowRight") keys.right=true;
+    if ((e.code==="Enter"||e.code==="Space") && !running) start();
+  });
+  window.addEventListener('keyup', (e)=>{
+    if (e.code==="KeyA"||e.code==="ArrowLeft") keys.left=false;
+    if (e.code==="KeyD"||e.code==="ArrowRight") keys.right=false;
+  });
+
+  // Mobile/touch input: left half => left, right half => right
+  function setTouchDirection(clientX){
+    const rect = canvas.getBoundingClientRect();
+    const x = clientX - rect.left;
+    const half = rect.width / 2;
+    keys.left = x < half;
+    keys.right = x >= half;
+  }
+  function clearTouchDirection(){ keys.left=false; keys.right=false; }
+
+  canvas.addEventListener('touchstart', (e)=>{
+    e.preventDefault();
+    if (!running) start();
+    setTouchDirection(e.touches[0].clientX);
+  }, {passive:false});
+
+  canvas.addEventListener('touchmove', (e)=>{
+    e.preventDefault();
+    setTouchDirection(e.touches[0].clientX);
+  }, {passive:false});
+
+  canvas.addEventListener('touchend', (e)=>{
+    e.preventDefault();
+    clearTouchDirection();
+  }, {passive:false});
+
+  canvas.addEventListener('pointerdown', (e)=>{
+    if (e.pointerType !== "mouse" || e.buttons === 1) {
+      if (!running) start();
+      setTouchDirection(e.clientX);
+    }
+  });
+  canvas.addEventListener('pointermove', (e)=>{
+    if (e.buttons === 1 || e.pointerType !== "mouse") setTouchDirection(e.clientX);
+  });
+  canvas.addEventListener('pointerup', ()=>clearTouchDirection());
+  canvas.addEventListener('pointercancel', ()=>clearTouchDirection());
+
+  // Overlay
+  function showStart(){
+    overlay.style.display="flex";
+    titleEl.textContent="Doodle Jump (B/W)";
+    descEl.innerHTML=`Jump upward by landing on platforms. Collect coins (+1). Avoid threats (enemies).<br><b>Controls:</b> A/D or Left/Right. Mobile: touch left/right.`;
+    startBtn.textContent="START";
+  }
+  function showGameOver(){
+    overlay.style.display="flex";
+    titleEl.textContent="GAME OVER";
+    descEl.innerHTML=`Final Score: <b>${score}</b><br>Press <b>ENTER</b> or tap/click <b>RESTART</b>.`;
+    startBtn.textContent="RESTART";
+  }
+  function hideOverlay(){ overlay.style.display="none"; }
+  startBtn.addEventListener('click', ()=>start());
+
+  function start(){
+    resetGame();
+    running=true;
+    hideOverlay();
+  }
+
+  // Collisions
+  function rectsIntersect(ax,ay,aw,ah,bx,by,bw,bh){
+    return ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by;
+  }
+
+  function playerHitRect(){
+    return {
+      x: player.x + PLAYER_HIT_INSET,
+      y: player.y + PLAYER_HIT_INSET,
+      w: player.w - PLAYER_HIT_INSET*2,
+      h: player.h - PLAYER_HIT_INSET*2
+    };
+  }
+
+  function circleRectHit(cx,cy,cr, rx,ry,rw,rh){
+    const closestX = clamp(cx, rx, rx+rw);
+    const closestY = clamp(cy, ry, ry+rh);
+    const dx = cx - closestX;
+    const dy = cy - closestY;
+    return (dx*dx + dy*dy) <= cr*cr;
+  }
+
+  function die(){
+    running=false;
+    showGameOver();
+  }
+
+  function update(){
+    // movement
+    if(keys.left) player.vx -= MOVE_ACCEL;
+    if(keys.right) player.vx += MOVE_ACCEL;
+    player.vx *= MOVE_FRICTION;
+    player.vx = clamp(player.vx, -MAX_VX, MAX_VX);
+    player.x += player.vx;
+
+    // wrap
+    if(player.x + player.w < 0) player.x = canvas.width;
+    if(player.x > canvas.width) player.x = -player.w;
+
+    // gravity
+    player.vy += GRAVITY;
+    player.y += player.vy;
+
+    // land on platforms
+    if(player.vy > 0){
+      for(const p of platforms){
+        if(rectsIntersect(player.x, player.y, player.w, player.h, p.x, p.y, p.w, p.h)){
+          const prevY = player.y - player.vy;
+          if(prevY + player.h <= p.y + 2){
+            player.y = p.y - player.h;
+            player.vy = JUMP_VY;
+          }
+        }
+      }
+    }
+
+    // coins
+    for(let i=coins.length-1;i>=0;i--){
+      const c=coins[i];
+      if(circleRectHit(c.x,c.y,c.r, player.x,player.y,player.w,player.h)){
+        coins.splice(i,1);
+        score += 1;
+        scoreText.textContent = "Score: " + score;
+        addPopup();
+      }
+    }
+
+    // enemies
+    const pr = playerHitRect();
+    for(const e of enemies){
+      e.t += 0.03;
+
+      if(e.type === "BOT"){
+        e.x += e.vx * 1.55;
+      } else if(e.type === "FUD"){
+        if(e.baseX === null) e.baseX = e.x;
+        e.x = e.baseX + Math.sin(e.t) * 46;
+      } else if(e.type === "RUG"){
+        const surge = (Math.sin(e.t*1.5) > 0.93) ? 2.6 : 1.0;
+        e.x += e.vx * 0.9 * surge;
+      }
+
+      if (e.x < e.r) {
+        e.x = e.r + 0.6;
+        e.vx = Math.abs(e.vx);
+        if (Math.abs(e.vx) < 0.8) e.vx = 1.2;
+      }
+      if (e.x > canvas.width - e.r) {
+        e.x = canvas.width - e.r - 0.6;
+        e.vx = -Math.abs(e.vx);
+        if (Math.abs(e.vx) < 0.8) e.vx = -1.2;
+      }
+
+      if(circleRectHit(e.x, e.y, e.hitR, pr.x, pr.y, pr.w, pr.h)){
+        die();
+        return;
+      }
+    }
+
+    // popups update
+    for (let i = popups.length - 1; i >= 0; i--) {
+      const p = popups[i];
+      p.y += p.vy;
+      p.life -= 1;
+      if (p.life <= 0) popups.splice(i, 1);
+    }
+
+    // camera follow
+    const target = canvas.height * 0.35;
+    if(player.y < target){
+      const dy = target - player.y;
+      player.y = target;
+      cameraY += dy;
+
+      for(const p of platforms) p.y += dy;
+      for(const c of coins) c.y += dy;
+      for(const e of enemies) e.y += dy;
+      for(const p of popups) p.y += dy;
+
+      platforms = platforms.filter(p => p.y < canvas.height + 120);
+      coins = coins.filter(c => c.y < canvas.height + 180);
+      enemies = enemies.filter(e => e.y < canvas.height + 220);
+
+      while(platforms.length < 18){
+        const topY = Math.min(...platforms.map(p=>p.y));
+        const ny = topY - Math.random()*(66-34) - 34;
+        const np = makePlatform(ny);
+        platforms.push(np);
+        if(Math.random()<0.60) coins.push(makeCoinNearPlatform(np));
+        maybeSpawnEnemyNear(np);
+      }
+    }
+
+    if(player.y > canvas.height + 80) die();
+  }
+
+  function drawEnemy(e){
+    ctx.save();
+    ctx.translate(e.x, e.y);
+
+    ctx.beginPath();
+    ctx.arc(0,0,e.r,0,Math.PI*2);
+    ctx.fillStyle = WHITE;
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = BLACK;
+    ctx.stroke();
+
+    ctx.fillStyle = BLACK;
+    ctx.fillRect(-10, -6, 6, 6);
+    ctx.fillRect(4, -6, 6, 6);
+
+    ctx.fillStyle = BLACK;
+    ctx.font = "800 11px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(e.type, 0, 12);
+
+    if(e.type === "RUG"){
+      ctx.beginPath();
+      ctx.moveTo(-14,-14); ctx.lineTo(-8,-18); ctx.lineTo(-10,-10);
+      ctx.moveTo(14,-14);  ctx.lineTo(8,-18);  ctx.lineTo(10,-10);
+      ctx.strokeStyle = BLACK;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
+    ctx.restore();
+  }
+
+  function drawPopups(){
+    for (const p of popups) {
+      const t = p.life / POPUP_LIFE;
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, Math.min(1, t));
+      ctx.fillStyle = WHITE;
+      ctx.strokeStyle = BLACK;
+      ctx.lineWidth = 3;
+      ctx.font = "900 18px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.strokeText(p.text, p.x, p.y);
+      ctx.fillText(p.text, p.x, p.y);
+      ctx.restore();
+    }
+  }
+
+  function draw(){
+    ctx.fillStyle = BG;
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+
+    ctx.globalAlpha = 0.10;
+    ctx.strokeStyle = WHITE;
+    ctx.lineWidth = 1;
+    for(let y=0;y<=canvas.height;y+=40){
+      ctx.beginPath(); ctx.moveTo(0,y+0.5); ctx.lineTo(canvas.width,y+0.5); ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+
+    for(const p of platforms){
+      ctx.fillStyle = WHITE;
+      ctx.fillRect(p.x, p.y, p.w, p.h);
+      ctx.strokeStyle = BLACK;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(p.x+0.5, p.y+0.5, p.w-1, p.h-1);
+    }
+
+    for(const c of coins){
+      ctx.beginPath();
+      ctx.arc(c.x, c.y, c.r, 0, Math.PI*2);
+      ctx.fillStyle = WHITE;
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = BLACK;
+      ctx.stroke();
+
+      const s = c.r*1.55;
+      if(c.sprite.complete && c.sprite.naturalWidth > 0){
+        ctx.drawImage(c.sprite, c.x - s/2, c.y - s/2, s, s);
+      } else {
+        ctx.fillStyle = BLACK;
+        ctx.fillRect(c.x-2, c.y-2, 4, 4);
+      }
+    }
+
+    for(const e of enemies) drawEnemy(e);
+
+    ctx.save();
+    ctx.filter = "grayscale(1) contrast(1.25) brightness(1.15)";
+    if(playerImg.complete && playerImg.naturalWidth > 0){
+      ctx.drawImage(playerImg, player.x, player.y, player.w, player.h);
+    } else {
+      ctx.fillStyle = WHITE;
+      ctx.fillRect(player.x, player.y, player.w, player.h);
+      ctx.strokeStyle = BLACK;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(player.x+0.5, player.y+0.5, player.w-1, player.h-1);
+    }
+    ctx.restore();
+
+    drawPopups();
+
+    const g = ctx.createLinearGradient(0,0,0,canvas.height);
+    g.addColorStop(0, "rgba(0,0,0,.25)");
+    g.addColorStop(0.35, "rgba(0,0,0,0)");
+    g.addColorStop(1, "rgba(0,0,0,.35)");
+    ctx.fillStyle = g;
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+  }
+
+  function loop(){
+    if(running) update();
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  showStart();
+  resetGame();
+  loop();
+})();
+</script>
+</body>
+</html>
